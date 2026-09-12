@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worship & Habit Quest Tracker 2-Player</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            game: {
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- React, ReactDOM & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 9999px; }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+    .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-200">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // SVG Icons for zero-dependency reliability
+    const IconCheck = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>;
+    const IconPlus = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>;
+    const IconFlame = () => <svg className="w-5 h-5 text-amber-500 fill-amber-500" viewBox="0 0 24 24"><path d="M12 23c-4.97 0-9-3.58-9-8 0-4.19 3.14-8.73 7.82-12.72a1 1 0 0 1 1.36.1c.36.42 2.76 3.42 3.82 5.62a9.7 9.7 0 0 1 1.94 4.86c0 5.66-3.23 10.14-5.94 10.14z"/></svg>;
+    const IconTrophy = () => <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15l-3 5h6l-3-5zm0 0a8 8 0 100-16 8 8 0 000 16zm-7-9h14v2H5V6z"/></svg>;
+    const IconUser = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>;
+    const IconSword = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>;
+    const IconCalendar = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>;
+    const IconBarChart = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>;
+    const IconBell = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>;
+    const IconTrash = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>;
+    const IconEdit = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>;
+    const IconMoon = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>;
+    const IconSun = () => <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>;
+    const IconStar = ({ filled }) => <svg className={`w-5 h-5 ${filled ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'}`} viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>;
+    const IconRotate = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>;
+    const IconSparkles = () => <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>;
+
+    const DEFAULT_TASKS = [
+      { id: '1', name: 'Sholat Tahajud', category: 'Ibadah Malam', target: '2 Rakaat' },
+      { id: '2', name: 'Sholat Taubat', category: 'Ibadah Malam', target: '2 Rakaat' },
+      { id: '3', name: 'Sholat Witir', category: 'Ibadah Malam', target: '3 Rakaat' },
+      { id: '4', name: 'Sholat Qobliyah Subuh', category: 'Ibadah Wajib & Sunnah', target: '2 Rakaat' },
+      { id: '5', name: 'Sholat Subuh', category: 'Ibadah Wajib & Sunnah', target: 'Tepat Waktu' },
+      { id: '6', name: 'Dzikir Pagi', category: "Dzikir & Al-Qur'an", target: '1 Kali' },
+      { id: '7', name: "Baca Surat Al-Waqi'ah", category: "Dzikir & Al-Qur'an", target: '1 Kali' },
+      { id: '8', name: 'Olahraga', category: 'Kesehatan & Produktivitas', target: '15-30 Menit' },
+      { id: '9', name: 'Sholat Dhuha', category: 'Ibadah Wajib & Sunnah', target: '2-4 Rakaat' },
+      { id: '10', name: 'Baca Buku', category: 'Kesehatan & Produktivitas', target: '15-30 Menit' },
+      { id: '11', name: 'Garap Tugas', category: 'Kesehatan & Produktivitas', target: 'Selesai Target' },
+      { id: '12', name: 'Sholat Qobliyah Dzuhur', category: 'Ibadah Wajib & Sunnah', target: '2-4 Rakaat' },
+      { id: '13', name: 'Sholat Dzuhur', category: 'Ibadah Wajib & Sunnah', target: 'Tepat Waktu' },
+      { id: '14', name: "Sholat Ba'diyah Dzuhur", category: 'Ibadah Wajib & Sunnah', target: '2 Rakaat' },
+      { id: '15', name: 'Sholat Ashar', category: 'Ibadah Wajib & Sunnah', target: 'Tepat Waktu' },
+      { id: '16', name: 'Dzikir Petang', category: "Dzikir & Al-Qur'an", target: '1 Kali' },
+      { id: '17', name: 'Sholat Maghrib', category: 'Ibadah Wajib & Sunnah', target: 'Tepat Waktu' },
+      { id: '18', name: 'Baca Surat Al-Mulk', category: "Dzikir & Al-Qur'an", target: '1 Kali' },
+      { id: '19', name: 'Sholat Isya', category: 'Ibadah Wajib & Sunnah', target: 'Tepat Waktu' },
+      { id: '20', name: 'Tidur Cepat / Cukup', category: 'Kesehatan & Produktivitas', target: 'Maks Jam 22:30' }
+    ];
+
+    const CATEGORIES = [
+      'Ibadah Malam',
+      'Ibadah Wajib & Sunnah',
+      "Dzikir & Al-Qur'an",
+      'Kesehatan & Produktivitas'
+    ];
+
+    const MONTHS = [
+      'Bulan 1 (Januari)', 'Bulan 2 (Februari)', 'Bulan 3 (Maret)', 'Bulan 4 (April)',
+      'Bulan 5 (Mei)', 'Bulan 6 (Juni)', 'Bulan 7 (Juli)', 'Bulan 8 (Agustus)',
+      'Bulan 9 (September)', 'Bulan 10 (Oktober)', 'Bulan 11 (November)', 'Bulan 12 (Desember)'
+    ];
+
+    const AVATAR_OPTIONS = ['🦁', '🦊', '🐯', '🦅', '🐼', '👑', '🥷', '🧕', '⚡', '🚀', '🌟', '⚔️', '🌙', '🕌', '💎'];
+
+    function App() {
+      // System States
+      const [darkMode, setDarkMode] = React.useState(true);
+      const [activeTab, setActiveTab] = React.useState('tracker'); // tracker, summary, multiplayer, manage
+      const [currentMonthIndex, setCurrentMonthIndex] = React.useState(8); // Bulan 9 (September default)
+      const [selectedDay, setSelectedDay] = React.useState(1); // 1-31
+      
+      // Tasks & Multi-player Data
+      const [tasks, setTasks] = React.useState(() => {
+        const saved = localStorage.getItem('worship_tasks');
+        return saved ? JSON.parse(saved) : DEFAULT_TASKS;
+      });
+
+      // Player 1 & Player 2 state
+      const [activePlayer, setActivePlayer] = React.useState('p1'); // p1 or p2
+      const [players, setPlayers] = React.useState(() => {
+        const saved = localStorage.getItem('worship_players');
+        return saved ? JSON.parse(saved) : {
+          p1: { name: 'Player 1 (Kamu)', avatar: '🦁', xp: 450, level: 3, streak: 5 },
+          p2: { name: 'Player 2 (Partner)', avatar: '🦊', xp: 380, level: 3, streak: 4 }
+        };
+      });
+
+      // Checks store format: { monthIndex_player_taskId_day: boolean }
+      const [checks, setChecks] = React.useState(() => {
+        const saved = localStorage.getItem('worship_checks');
+        if (saved) return JSON.parse(saved);
+        // Pre-fill some mock checks for current day simulation
+        const initial = {};
+        // Mock sample checks for Day 1
+        initial[`8_p1_4_1`] = true;
+        initial[`8_p1_5_1`] = true;
+        initial[`8_p1_6_1`] = true;
+        initial[`8_p1_8_1`] = true;
+        initial[`8_p2_5_1`] = true;
+        initial[`8_p2_6_1`] = true;
+        return initial;
+      });
+
+      // Boss HP (Co-op Mode)
+      const [bossHp, setBossHp] = React.useState(() => {
+        const saved = localStorage.getItem('worship_boss_hp');
+        return saved ? parseInt(saved, 10) : 650; // max 1000
+      });
+
+      // Monthly Evaluation State & History Archive
+      const [evaluations, setEvaluations] = React.useState(() => {
+        const saved = localStorage.getItem('worship_evaluations');
+        return saved ? JSON.parse(saved) : {};
+      });
+
+      // Form evaluation inputs
+      const [evalInput, setEvalInput] = React.useState({
+        rating: 5,
+        achievements: '',
+        challenges: '',
+        goalsNextMonth: ''
+      });
+
+      // Modals
+      const [isAddTaskOpen, setIsAddTaskOpen] = React.useState(false);
+      const [editingTask, setEditingTask] = React.useState(null);
+      const [taskForm, setTaskForm] = React.useState({ name: '', category: CATEGORIES[0], target: '' });
+      const [nudgeNotification, setNudgeNotification] = React.useState(null);
+      const [isResetConfirmOpen, setIsResetConfirmOpen] = React.useState(false);
+
+      const [isEditProfileOpen, setIsEditProfileOpen] = React.useState(false);
+      const [editingPlayerKey, setEditingPlayerKey] = React.useState('p1');
+      const [profileForm, setProfileForm] = React.useState({ name: '', avatar: '🦁' });
+
+      // Save to LocalStorage on changes
+      React.useEffect(() => {
+        localStorage.setItem('worship_tasks', JSON.stringify(tasks));
+      }, [tasks]);
+
+      React.useEffect(() => {
+        localStorage.setItem('worship_checks', JSON.stringify(checks));
+      }, [checks]);
+
+      React.useEffect(() => {
+        localStorage.setItem('worship_players', JSON.stringify(players));
+      }, [players]);
+
+      React.useEffect(() => {
+        localStorage.setItem('worship_boss_hp', bossHp.toString());
+      }, [bossHp]);
+
+      React.useEffect(() => {
+        localStorage.setItem('worship_evaluations', JSON.stringify(evaluations));
+      }, [evaluations]);
+
+      // Dark mode toggle handler
+      React.useEffect(() => {
+        if (darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }, [darkMode]);
+
+      // Load existing evaluation for active month if any
+      React.useEffect(() => {
+        if (evaluations[currentMonthIndex]) {
+          setEvalInput(evaluations[currentMonthIndex]);
+        } else {
+          setEvalInput({ rating: 5, achievements: '', challenges: '', goalsNextMonth: '' });
+        }
+      }, [currentMonthIndex, evaluations]);
+
+      // Trigger confetti animation
+      const triggerConfetti = () => {
+        if (window.confetti) {
+          window.confetti({
+            particleCount: 70,
+            spread: 60,
+            origin: { y: 0.7 }
+          });
+        }
+      };
+
+      // Toggle item check
+      const handleToggleCheck = (taskId, day) => {
+        const key = `${currentMonthIndex}_${activePlayer}_${taskId}_${day}`;
+        const currentVal = !!checks[key];
+        const newVal = !currentVal;
+
+        setChecks(prev => ({
+          ...prev,
+          [key]: newVal
+        }));
+
+        // Gamification: Add XP & Boss Damage if checking
+        if (newVal) {
+          triggerConfetti();
+          
+          // Damage boss
+          setBossHp(prev => Math.max(0, prev - 15));
+
+          // Give player XP
+          setPlayers(prev => {
+            const player = prev[activePlayer];
+            const newXp = player.xp + 15;
+            const newLevel = Math.floor(newXp / 150) + 1;
+            return {
+              ...prev,
+              [activePlayer]: {
+                ...player,
+                xp: newXp,
+                level: newLevel
+              }
+            };
+          });
+        }
+      };
+
+      // Calculate stats for current month and player
+      const getMonthDayStats = (day, pId = activePlayer) => {
+        let total = tasks.length;
+        if (total === 0) return 0;
+        let count = 0;
+        tasks.forEach(t => {
+          if (checks[`${currentMonthIndex}_${pId}_${t.id}_${day}`]) {
+            count++;
+          }
+        });
+        return Math.round((count / total) * 100);
+      };
+
+      // Overall monthly completion rate
+      const getOverallMonthCompletion = (pId = activePlayer) => {
+        let totalPossible = tasks.length * 31;
+        if (totalPossible === 0) return 0;
+        let checkedCount = 0;
+        for (let d = 1; d <= 31; d++) {
+          tasks.forEach(t => {
+            if (checks[`${currentMonthIndex}_${pId}_${t.id}_${d}`]) {
+              checkedCount++;
+            }
+          });
+        }
+        return Math.round((checkedCount / totalPossible) * 100);
+      };
+
+      // Category level stats
+      const getCategoryStats = (categoryName, pId = activePlayer) => {
+        const categoryTasks = tasks.filter(t => t.category === categoryName);
+        if (categoryTasks.length === 0) return 0;
+        let totalPossible = categoryTasks.length * 31;
+        let checkedCount = 0;
+        for (let d = 1; d <= 31; d++) {
+          categoryTasks.forEach(t => {
+            if (checks[`${currentMonthIndex}_${pId}_${t.id}_${d}`]) {
+              checkedCount++;
+            }
+          });
+        }
+        return Math.round((checkedCount / totalPossible) * 100);
+      };
+
+      // Calculate streak for a specific task
+      const getTaskStreak = (taskId, pId = activePlayer) => {
+        let maxStreak = 0;
+        let tempStreak = 0;
+        for (let d = 1; d <= 31; d++) {
+          if (checks[`${currentMonthIndex}_${pId}_${taskId}_${d}`]) {
+            tempStreak++;
+            if (tempStreak > maxStreak) maxStreak = tempStreak;
+          } else {
+            tempStreak = 0;
+          }
+        }
+        return maxStreak;
+      };
+
+      // Task CRUD
+      const handleSaveTask = (e) => {
+        e.preventDefault();
+        if (!taskForm.name.trim()) return;
+
+        if (editingTask) {
+          setTasks(prev => prev.map(t => t.id === editingTask.id ? { ...t, ...taskForm } : t));
+        } else {
+          const newTask = {
+            id: Date.now().toString(),
+            name: taskForm.name,
+            category: taskForm.category,
+            target: taskForm.target || 'Setiap Hari'
+          };
+          setTasks(prev => [...prev, newTask]);
+        }
+
+        setEditingTask(null);
+        setTaskForm({ name: '', category: CATEGORIES[0], target: '' });
+        setIsAddTaskOpen(false);
+      };
+
+      const handleEditTaskClick = (task) => {
+        setEditingTask(task);
+        setTaskForm({ name: task.name, category: task.category, target: task.target });
+        setIsAddTaskOpen(true);
+      };
+
+      const handleDeleteTask = (id) => {
+        setTasks(prev => prev.filter(t => t.id !== id));
+      };
+
+      // Reset Month (Automated Archiving simulation)
+      const handleExecuteResetMonth = () => {
+        // Clear all checks for current month for both players
+        const newChecks = { ...checks };
+        Object.keys(newChecks).forEach(key => {
+          if (key.startsWith(`${currentMonthIndex}_`)) {
+            delete newChecks[key];
+          }
+        });
+        setChecks(newChecks);
+        setIsResetConfirmOpen(false);
+
+        // Show toast notification
+        setNudgeNotification({
+          title: "Bulan Berhasil Direset & Diarsip!",
+          message: `Riwayat centang ${MONTHS[currentMonthIndex]} telah dibersihkan untuk menyambut lembaran baru.`
+        });
+      };
+
+      // Save Evaluation
+      const handleSaveEvaluation = (e) => {
+        e.preventDefault();
+        setEvaluations(prev => ({
+          ...prev,
+          [currentMonthIndex]: { ...evalInput, dateSaved: new Date().toLocaleDateString('id-ID') }
+        }));
+        triggerConfetti();
+        setNudgeNotification({
+          title: "Evaluasi Bulanan Tersimpan! 📝",
+          message: `Refleksi untuk ${MONTHS[currentMonthIndex]} telah dicatat dalam jurnal.`
+        });
+      };
+
+      // Nudge Player
+      const handleNudgePlayer = () => {
+        const otherP = activePlayer === 'p1' ? players.p2 : players.p1;
+        const currentP = players[activePlayer];
+        setNudgeNotification({
+          title: `Pengingat Dikirim ke ${otherP.name}! 🔔`,
+          message: `"${currentP.name} mengingatkanmu: Buka Worship Tracker dan tuntaskan target amalan hari ini ya!"`
+        });
+      };
+
+      const openEditProfile = (playerKey) => {
+        setEditingPlayerKey(playerKey);
+        setProfileForm({
+          name: players[playerKey].name,
+          avatar: players[playerKey].avatar
+        });
+        setIsEditProfileOpen(true);
+      };
+
+      const handleSaveProfile = (e) => {
+        e.preventDefault();
+        if (!profileForm.name.trim()) return;
+        setPlayers(prev => ({
+          ...prev,
+          [editingPlayerKey]: {
+            ...prev[editingPlayerKey],
+            name: profileForm.name.trim(),
+            avatar: profileForm.avatar || '👤'
+          }
+        }));
+        setIsEditProfileOpen(false);
+        triggerConfetti();
+        setNudgeNotification({
+          title: "Profil Berhasil Diperbarui! ✨",
+          message: `Profil ${profileForm.name} telah disimpan.`
+        });
+      };
+
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          
+          {/* Header Bar */}
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-200 dark:border-gray-800">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">✨</span>
+                <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
+                  Worship & Habit Quest Tracker
+                </h1>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Jaga konsistensi ibadah, tingkatkan kebiasaan positif & capai target bersama partner!
+              </p>
+            </div>
+
+            {/* Top Right Controls */}
+            <div className="flex items-center gap-3">
+              {/* Month Selector */}
+              <div className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-1.5 shadow-sm">
+                <IconCalendar />
+                <select 
+                  value={currentMonthIndex} 
+                  onChange={(e) => setCurrentMonthIndex(parseInt(e.target.value))}
+                  className="bg-transparent text-sm font-semibold focus:outline-none dark:text-gray-200 cursor-pointer"
+                >
+                  {MONTHS.map((m, idx) => (
+                    <option key={idx} value={idx} className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Theme Switcher */}
+              <button 
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition shadow-sm"
+                title="Toggle Theme"
+              >
+                {darkMode ? <IconSun /> : <IconMoon />}
+              </button>
+            </div>
+          </header>
+
+          {}
+          {/* 2-Player Header Summary Widget */}
+          <div className="my-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Player 1 Card */}
+            <div 
+              onClick={() => setActivePlayer('p1')}
+              className={`p-4 rounded-2xl border transition cursor-pointer relative overflow-hidden ${
+                activePlayer === 'p1' 
+                  ? 'bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500 shadow-md ring-2 ring-emerald-500/20' 
+                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 opacity-80 hover:opacity-100'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl bg-emerald-100 dark:bg-emerald-950/80 p-2 rounded-xl">{players.p1.avatar}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">{players.p1.name}</h3>
+                      {activePlayer === 'p1' && (
+                        <span className="bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">Aktif</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Level {players.p1.level} Explorer</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEditProfile('p1'); }}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition"
+                    title="Edit Profil Player 1"
+                  >
+                    <IconEdit />
+                  </button>
+                  <div className="text-right">
+                    <span className="text-xs font-semibold uppercase text-emerald-600 dark:text-emerald-400">XP</span>
+                    <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">{players.p1.xp} pts</p>
+                  </div>
+                </div>
+              </div>
+              {/* XP Progress Bar */}
+              <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden mt-1">
+                <div 
+                  className="bg-emerald-500 h-2 rounded-full transition-all duration-500" 
+                  style={{ width: `${(players.p1.xp % 150) / 150 * 100}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Player 2 Card */}
+            <div 
+              onClick={() => setActivePlayer('p2')}
+              className={`p-4 rounded-2xl border transition cursor-pointer relative overflow-hidden ${
+                activePlayer === 'p2' 
+                  ? 'bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500 shadow-md ring-2 ring-violet-500/20' 
+                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 opacity-80 hover:opacity-100'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl bg-violet-100 dark:bg-violet-950/80 p-2 rounded-xl">{players.p2.avatar}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">{players.p2.name}</h3>
+                      {activePlayer === 'p2' && (
+                        <span className="bg-violet-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">Aktif</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Level {players.p2.level} Adventurer</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEditProfile('p2'); }}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/50 transition"
+                    title="Edit Profil Player 2"
+                  >
+                    <IconEdit />
+                  </button>
+                  <div className="text-right">
+                    <span className="text-xs font-semibold uppercase text-violet-600 dark:text-violet-400">XP</span>
+                    <p className="text-lg font-extrabold text-violet-600 dark:text-violet-400">{players.p2.xp} pts</p>
+                  </div>
+                </div>
+              </div>
+              {/* XP Progress Bar */}
+              <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden mt-1">
+                <div 
+                  className="bg-violet-500 h-2 rounded-full transition-all duration-500" 
+                  style={{ width: `${(players.p2.xp % 150) / 150 * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {}
+          {/* Main Navigation Tabs */}
+          <div className="flex overflow-x-auto custom-scrollbar border-b border-gray-200 dark:border-gray-800 mb-6 gap-2">
+            <button
+              onClick={() => setActiveTab('tracker')}
+              className={`flex items-center gap-2 px-5 py-3 font-semibold text-sm border-b-2 whitespace-nowrap transition ${
+                activeTab === 'tracker'
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              <IconCheck /> Tracker Harian
+            </button>
+
+            <button
+              onClick={() => setActiveTab('summary')}
+              className={`flex items-center gap-2 px-5 py-3 font-semibold text-sm border-b-2 whitespace-nowrap transition ${
+                activeTab === 'summary'
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              <IconBarChart /> Ringkasan & Evaluasi
+            </button>
+
+            <button
+              onClick={() => setActiveTab('multiplayer')}
+              className={`flex items-center gap-2 px-5 py-3 font-semibold text-sm border-b-2 whitespace-nowrap transition ${
+                activeTab === 'multiplayer'
+                  ? 'border-violet-500 text-violet-600 dark:text-violet-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              <IconSword /> 2-Player Gamifikasi
+            </button>
+
+            <button
+              onClick={() => setActiveTab('manage')}
+              className={`flex items-center gap-2 px-5 py-3 font-semibold text-sm border-b-2 whitespace-nowrap transition ${
+                activeTab === 'manage'
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              <IconPlus /> Kelola Amalan ({tasks.length})
+            </button>
+          </div>
+
+          {/* TAB 1: TRACKER HARIAN */}
+          {activeTab === 'tracker' && (
+            <div>
+              {}
+              {/* Day Selector Ribbon */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 mb-6 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <IconCalendar />
+                    <h2 className="font-bold text-base text-gray-800 dark:text-gray-100">
+                      Pilih Tanggal ({MONTHS[currentMonthIndex]})
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-gray-500">
+                      Progress Hari Ini: <span className="text-emerald-500 font-bold">{getMonthDayStats(selectedDay)}%</span>
+                    </span>
+                    <button
+                      onClick={() => setIsResetConfirmOpen(true)}
+                      className="text-xs flex items-center gap-1 text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950/40 px-2.5 py-1 rounded-lg transition"
+                      title="Reset dan Arsipkan Bulan Ini"
+                    >
+                      <IconRotate /> Reset Bulanan
+                    </button>
+                  </div>
+                </div>
+
+                {/* Day Buttons Horizontal Scroll */}
+                <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
+                    const dayCompletion = getMonthDayStats(day);
+                    const isSelected = selectedDay === day;
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => setSelectedDay(day)}
+                        className={`flex-shrink-0 flex flex-col items-center justify-center w-12 h-14 rounded-xl border transition ${
+                          isSelected
+                            ? 'bg-emerald-500 text-white border-emerald-500 shadow-md font-bold scale-105'
+                            : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <span className="text-xs opacity-80">Tgl</span>
+                        <span className="text-base font-extrabold">{day}</span>
+                        <div className="w-6 bg-gray-200 dark:bg-gray-700 h-1 rounded-full mt-1 overflow-hidden">
+                          <div 
+                            className={`h-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`} 
+                            style={{ width: `${dayCompletion}%` }}
+                          ></div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Categorized Tasks List */}
+              <div className="space-y-6">
+                {CATEGORIES.map(category => {
+                  const categoryTasks = tasks.filter(t => t.category === category);
+                  if (categoryTasks.length === 0) return null;
+
+                  return (
+                    <div key={category} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm">
+                      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                          <h3 className="font-extrabold text-base text-gray-900 dark:text-gray-100">{category}</h3>
+                        </div>
+                        <span className="text-xs bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-semibold px-2.5 py-1 rounded-lg">
+                          {categoryTasks.filter(t => checks[`${currentMonthIndex}_${activePlayer}_${t.id}_${selectedDay}`]).length} / {categoryTasks.length} Selesai
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {categoryTasks.map(task => {
+                          const isChecked = !!checks[`${currentMonthIndex}_${activePlayer}_${task.id}_${selectedDay}`];
+                          return (
+                            <div 
+                              key={task.id}
+                              onClick={() => handleToggleCheck(task.id, selectedDay)}
+                              className={`flex items-center justify-between p-3.5 rounded-xl border transition cursor-pointer select-none ${
+                                isChecked
+                                  ? 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/60 text-gray-900 dark:text-gray-100'
+                                  : 'bg-gray-50/50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition ${
+                                  isChecked ? 'bg-emerald-500 text-white shadow-sm' : 'border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
+                                }`}>
+                                  {isChecked && <IconCheck />}
+                                </div>
+                                <div>
+                                  <p className={`font-semibold text-sm ${isChecked ? 'line-through opacity-75' : ''}`}>
+                                    {task.name}
+                                  </p>
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">Target: {task.target}</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                                  +15 XP
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {}
+          {/* TAB 2: RINGKASAN & EVALUASI */}
+          {activeTab === 'summary' && (
+            <div className="space-y-6">
+              {/* Summary Cards Top */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Penyelesaian Bulanan</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-3xl font-extrabold text-emerald-500">{getOverallMonthCompletion()}%</span>
+                    <span className="text-xs text-gray-500">dari total target amalan</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-800 h-2 rounded-full mt-3 overflow-hidden">
+                    <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${getOverallMonthCompletion()}%` }}></div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Streak Terpanjang</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-3xl font-extrabold text-amber-500 flex items-center gap-1">
+                      <IconFlame /> {Math.max(...tasks.map(t => getTaskStreak(t.id)), 0)} Hari
+                    </span>
+                    <span className="text-xs text-gray-500">konsistensi tanpa putus</span>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Pencapaian Level</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-3xl font-extrabold text-violet-500">Lvl {players[activePlayer].level}</span>
+                    <span className="text-xs text-gray-500">Total {players[activePlayer].xp} XP Ditabung</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Heatmap / Contribution Grid (31 Days) */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-extrabold text-base text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                  <IconSparkles /> Activity Heatmap - {MONTHS[currentMonthIndex]}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  Visual kerapian dan keaktifan ibadah sepanjang 31 hari bulan berjalan.
+                </p>
+
+                <div className="grid grid-cols-7 sm:grid-cols-10 md:grid-cols-16 gap-2">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
+                    const stats = getMonthDayStats(day);
+                    let colorClass = 'bg-gray-100 dark:bg-gray-800 text-gray-400';
+                    if (stats > 0 && stats <= 30) colorClass = 'bg-emerald-200 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300';
+                    else if (stats > 30 && stats <= 70) colorClass = 'bg-emerald-400 text-white';
+                    else if (stats > 70) colorClass = 'bg-emerald-600 text-white font-bold';
+
+                    return (
+                      <div 
+                        key={day}
+                        className={`aspect-square rounded-lg flex flex-col items-center justify-center p-1 text-xs cursor-pointer hover:scale-105 transition ${colorClass}`}
+                        title={`Hari ke-${day}: ${stats}% selesai`}
+                        onClick={() => { setSelectedDay(day); setActiveTab('tracker'); }}
+                      >
+                        <span className="text-[10px] opacity-75">{day}</span>
+                        <span className="font-extrabold">{stats}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Category Breakdown & Insights */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Category Progress */}
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm">
+                  <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 mb-4">Progress Per Kategori</h3>
+                  <div className="space-y-4">
+                    {CATEGORIES.map(cat => {
+                      const rate = getCategoryStats(cat);
+                      return (
+                        <div key={cat}>
+                          <div className="flex justify-between text-xs font-semibold mb-1">
+                            <span className="text-gray-700 dark:text-gray-300">{cat}</span>
+                            <span className="text-emerald-500 font-bold">{rate}%</span>
+                          </div>
+                          <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden">
+                            <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${rate}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Monthly Insight Badge */}
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                      <IconTrophy /> Insight & Laporan Otomatis
+                    </h3>
+                    
+                    <div className="space-y-3">
+                      <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block uppercase">🌟 Kategori Terkuat</span>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-0.5">
+                          {CATEGORIES.reduce((max, cat) => getCategoryStats(cat) > getCategoryStats(max) ? cat : max, CATEGORIES[0])} ({Math.max(...CATEGORIES.map(getCategoryStats))}% Target)
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60">
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 block uppercase">🎯 Perlu Ditingkatkan</span>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-0.5">
+                          {CATEGORIES.reduce((min, cat) => getCategoryStats(cat) < getCategoryStats(min) ? cat : min, CATEGORIES[0])} ({Math.min(...CATEGORIES.map(getCategoryStats))}% Target)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* FITUR EVALUASI BULANAN (Refleksi Diri) */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+                  <div>
+                    <h3 className="font-extrabold text-lg text-gray-900 dark:text-gray-100">
+                      📝 Jurnal Evaluasi & Refleksi Bulanan
+                    </h3>
+                    <p className="text-xs text-gray-500">Evaluasi perkembangan ibadah dan kebiasaanmu di bulan {MONTHS[currentMonthIndex]}.</p>
+                  </div>
+                  {evaluations[currentMonthIndex]?.dateSaved && (
+                    <span className="text-xs bg-emerald-100 dark:bg-emerald-950 text-emerald-600 font-semibold px-2.5 py-1 rounded-full">
+                      Tersimpan: {evaluations[currentMonthIndex].dateSaved}
+                    </span>
+                  )}
+                </div>
+
+                <form onSubmit={handleSaveEvaluation} className="space-y-4">
+                  {/* Rating Kepuasan */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-gray-500 mb-2">
+                      Tingkat Kepuasan & Kekhusyukan Bulan Ini (1 - 5 Bintang)
+                    </label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          type="button"
+                          key={star}
+                          onClick={() => setEvalInput(prev => ({ ...prev, rating: star }))}
+                          className="p-1 hover:scale-110 transition"
+                        >
+                          <IconStar filled={star <= evalInput.rating} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Input Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Pencapaian Terbaik Bulan Ini ✨
+                      </label>
+                      <textarea
+                        rows="3"
+                        value={evalInput.achievements}
+                        onChange={(e) => setEvalInput({ ...evalInput, achievements: e.target.value })}
+                        placeholder="Contoh: Berhasil sholat tahajud 15 kali, konsisten baca Al-Waqi'ah..."
+                        className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      ></textarea>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Tantangan & Hambatan Utamaku ⚠️
+                      </label>
+                      <textarea
+                        rows="3"
+                        value={evalInput.challenges}
+                        onChange={(e) => setEvalInput({ ...evalInput, challenges: e.target.value })}
+                        placeholder="Contoh: Sering begadang sehingga subuh terburu-buru..."
+                        className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      ></textarea>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Rencana Perbaikan Bulan Depan 🎯
+                      </label>
+                      <textarea
+                        rows="3"
+                        value={evalInput.goalsNextMonth}
+                        onChange={(e) => setEvalInput({ ...evalInput, goalsNextMonth: e.target.value })}
+                        placeholder="Contoh: Matikan HP jam 22.00, tambah olahraga rutin 3x seminggu..."
+                        className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-md transition flex items-center gap-2"
+                    >
+                      <IconCheck /> Simpan Refleksi Bulanan
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {}
+          {/* TAB 3: MULTIPLAYER GAMIFIKASI */}
+          {activeTab === 'multiplayer' && (
+            <div className="space-y-6">
+              {/* Leaderboard Versus Banner */}
+              <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="text-4xl p-3 bg-white/10 rounded-2xl backdrop-blur-md">🏆</div>
+                    <div>
+                      <span className="text-xs uppercase font-extrabold tracking-widest text-violet-200">2-Player Versus Arena</span>
+                      <h2 className="text-2xl font-black mt-0.5">Leaderboard & Skor Real-Time</h2>
+                      <p className="text-xs text-violet-100 mt-1">Siapa yang paling konsisten beribadah bulan ini?</p>
+                    </div>
+                  </div>
+
+                  {/* Nudge / Ping Button */}
+                  <button
+                    onClick={handleNudgePlayer}
+                    className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-violet-700 font-bold text-sm shadow-lg hover:bg-violet-50 transition transform active:scale-95"
+                  >
+                    <IconBell /> Ingatkan Partner! 🔔
+                  </button>
+                </div>
+
+                {/* Score Cards */}
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-violet-200 font-semibold">{players.p1.name}</p>
+                      <p className="text-2xl font-extrabold mt-1">{players.p1.xp} XP</p>
+                    </div>
+                    {players.p1.xp >= players.p2.xp && <span className="text-3xl">👑</span>}
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-violet-200 font-semibold">{players.p2.name}</p>
+                      <p className="text-2xl font-extrabold mt-1">{players.p2.xp} XP</p>
+                    </div>
+                    {players.p2.xp >= players.p1.xp && <span className="text-3xl">👑</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* CO-OP BOSS BATTLE QUEST */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+                  <div>
+                    <span className="text-xs font-extrabold uppercase text-violet-500 tracking-wider">Co-op Boss Battle</span>
+                    <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                      🐉 Quest Bersama: "Naga Hawa Nafsu"
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Setiap tugas harian yang dicentang oleh kalian berdua akan memberikan 15 Damage pada Boss ini!
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    bossHp === 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+                  }`}>
+                    {bossHp === 0 ? '🎉 DEFEATED!' : '⚔️ ACTIVE BOSS'}
+                  </span>
+                </div>
+
+                {/* Boss Health Bar */}
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300">HP Boss Bersama</span>
+                    <span className="text-sm font-extrabold text-red-500">{bossHp} / 1000 HP</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 h-4 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-red-500 to-amber-500 h-full transition-all duration-500"
+                      style={{ width: `${(bossHp / 1000) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Co-op Shared Milestones */}
+                <div className="mt-6">
+                  <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 mb-3">Milestone Shared Achievement</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex items-center gap-3">
+                      <span className="text-2xl">🌙</span>
+                      <div>
+                        <p className="text-xs font-bold text-gray-800 dark:text-gray-200">50 Rakaat Tahajud Berdua</p>
+                        <span className="text-[10px] text-emerald-500 font-semibold">Unlocked Badge: Night Warrior</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex items-center gap-3">
+                      <span className="text-2xl">📖</span>
+                      <div>
+                        <p className="text-xs font-bold text-gray-800 dark:text-gray-200">30 Hari Khatam Al-Mulk</p>
+                        <span className="text-[10px] text-amber-500 font-semibold">Unlocked Badge: Light Keeper</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex items-center gap-3">
+                      <span className="text-2xl">💪</span>
+                      <div>
+                        <p className="text-xs font-bold text-gray-800 dark:text-gray-200">Kombinasi 30 Hari Olahraga</p>
+                        <span className="text-[10px] text-violet-500 font-semibold">Unlocked Badge: Fit Champions</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {}
+          {/* TAB 4: KELOLA AMALAN (CRUD) */}
+          {activeTab === 'manage' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">Daftar Amalan & Habit</h2>
+                  <p className="text-xs text-gray-500">Tambah, ubah, atau sesuaikan target kegiatan ibadah harianmu.</p>
+                </div>
+                <button
+                  onClick={() => { setEditingTask(null); setTaskForm({ name: '', category: CATEGORIES[0], target: '' }); setIsAddTaskOpen(true); }}
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-md transition flex items-center gap-2"
+                >
+                  <IconPlus /> Tambah Amalan Baru
+                </button>
+              </div>
+
+              {/* Tasks Table */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 font-bold text-xs uppercase">
+                        <th className="p-4">Kegiatan / Amalan</th>
+                        <th className="p-4">Kategori</th>
+                        <th className="p-4">Target Detail</th>
+                        <th className="p-4 text-right">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {tasks.map((task) => (
+                        <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
+                          <td className="p-4 font-semibold text-gray-900 dark:text-gray-100">{task.name}</td>
+                          <td className="p-4">
+                            <span className="text-xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-semibold px-2.5 py-1 rounded-full">
+                              {task.category}
+                            </span>
+                          </td>
+                          <td className="p-4 text-gray-500 dark:text-gray-400 text-xs">{task.target}</td>
+                          <td className="p-4 text-right space-x-2">
+                            <button
+                              onClick={() => handleEditTaskClick(task)}
+                              className="p-1.5 text-gray-500 hover:text-emerald-500 transition"
+                              title="Edit"
+                            >
+                              <IconEdit />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="p-1.5 text-gray-500 hover:text-red-500 transition"
+                              title="Hapus"
+                            >
+                              <IconTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {}
+          {/* MODAL: Tambah / Edit Tugas */}
+          {isAddTaskOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                <h3 className="font-extrabold text-lg text-gray-900 dark:text-gray-100 mb-4">
+                  {editingTask ? 'Edit Amalan / Task' : 'Tambah Amalan Baru'}
+                </h3>
+                <form onSubmit={handleSaveTask} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Nama Kegiatan</label>
+                    <input
+                      type="text"
+                      required
+                      value={taskForm.name}
+                      onChange={(e) => setTaskForm({ ...taskForm, name: e.target.value })}
+                      placeholder="Contoh: Sholat Qobliyah Subuh"
+                      className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Kategori</label>
+                    <select
+                      value={taskForm.category}
+                      onChange={(e) => setTaskForm({ ...taskForm, category: e.target.value })}
+                      className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Target Deskripsi</label>
+                    <input
+                      type="text"
+                      value={taskForm.target}
+                      onChange={(e) => setTaskForm({ ...taskForm, target: e.target.value })}
+                      placeholder="Contoh: 2 Rakaat / 15 Menit / Tepat Waktu"
+                      className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddTaskOpen(false)}
+                      className="px-4 py-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold text-sm transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition"
+                    >
+                      Simpan
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL CONFIRMATION: Reset Bulanan */}
+          {isResetConfirmOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl text-center">
+                <div className="w-12 h-12 bg-red-100 dark:bg-red-950 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <IconRotate />
+                </div>
+                <h3 className="font-extrabold text-lg text-gray-900 dark:text-gray-100 mb-2">Konfirmasi Reset Bulanan</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+                  Apakah Anda yakin ingin mengarsipkan dan membersihkan riwayat centang harian untuk <b>{MONTHS[currentMonthIndex]}</b>?
+                </p>
+                <div className="flex justify-center gap-3">
+                  <button
+                    onClick={() => setIsResetConfirmOpen(false)}
+                    className="px-4 py-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold text-sm transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleExecuteResetMonth}
+                    className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition shadow-md"
+                  >
+                    Ya, Bersihkan & Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL: Edit Profil Player */}
+          {isEditProfileOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-extrabold text-lg text-gray-900 dark:text-gray-100">
+                    Edit Profil {editingPlayerKey === 'p1' ? 'Player 1' : 'Player 2'}
+                  </h3>
+                  <span className="text-3xl">{profileForm.avatar}</span>
+                </div>
+                
+                <form onSubmit={handleSaveProfile} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Nama Player</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileForm.name}
+                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                      placeholder="Masukkan nama player..."
+                      className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-2">Pilih Avatar Emoji</label>
+                    <div className="grid grid-cols-5 gap-2 mb-3">
+                      {AVATAR_OPTIONS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setProfileForm({ ...profileForm, avatar: emoji })}
+                          className={`text-2xl p-2.5 rounded-xl border transition flex items-center justify-center ${
+                            profileForm.avatar === emoji 
+                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 scale-105 shadow-sm' 
+                              : 'border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Atau ketik emoji sendiri:</span>
+                      <input
+                        type="text"
+                        maxLength="4"
+                        value={profileForm.avatar}
+                        onChange={(e) => setProfileForm({ ...profileForm, avatar: e.target.value })}
+                        className="w-16 text-center text-sm p-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditProfileOpen(false)}
+                      className="px-4 py-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold text-sm transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition shadow-md"
+                    >
+                      Simpan Profil
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* TOAST NOTIFICATION: Nudge Alert */}
+          {nudgeNotification && (
+            <div className="fixed bottom-5 right-5 z-50 bg-white dark:bg-gray-900 border border-violet-500/30 rounded-2xl p-4 shadow-2xl max-w-sm animate-bounce">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🔔</span>
+                <div>
+                  <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100">{nudgeNotification.title}</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{nudgeNotification.message}</p>
+                  <button
+                    onClick={() => setNudgeNotification(null)}
+                    className="mt-2 text-xs font-bold text-violet-500 hover:underline"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html>
